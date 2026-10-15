@@ -267,6 +267,10 @@ class DefaultContext(BaseContext):
         """Returns a list of the supported start methods, default first."""
         if sys.platform == 'win32':
             return ['spawn']
+        elif not hasattr(os, 'fork'):
+            # browser-python: fork の無い OS（BrowserOS の WASI）は、子を posix_spawn で起こす spawn だけを持つ
+            # （forkserver もサーバーが fork する）
+            return ['spawn']
         else:
             methods = ['spawn', 'fork'] if sys.platform == 'darwin' else ['fork', 'spawn']
             if reduction.HAVE_SEND_HANDLE:
@@ -326,9 +330,10 @@ if sys.platform != 'win32':
         'spawn': SpawnContext(),
         'forkserver': ForkServerContext(),
     }
-    if sys.platform == 'darwin':
+    if sys.platform == 'darwin' or not hasattr(os, 'fork'):
         # bpo-33725: running arbitrary code after fork() is no longer reliable
         # on macOS since macOS 10.14 (Mojave). Use spawn by default instead.
+        # browser-python: fork の無い OS（BrowserOS の WASI）も spawn で起こす
         _default_context = DefaultContext(_concrete_contexts['spawn'])
     else:
         _default_context = DefaultContext(_concrete_contexts['fork'])
