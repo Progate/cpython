@@ -6702,7 +6702,12 @@ os__exit_impl(PyObject *module, int status)
 #define EXECV_CHAR char
 #endif
 
-#if defined(HAVE_EXECV) || defined(HAVE_SPAWNV) || defined(HAVE_RTPSPAWN)
+/*
+ * browser-python: posix_spawn は引数と環境変数の並びをこれらで作るが、上流は「posix_spawn がある
+ * プラットフォームには exec もある」として exec の条件でしか定義していない。BrowserOS の libc には
+ * posix_spawn があって exec が無い（プロセスの中身を入れ替える syscall が無い）ので、posix_spawn でも定義する
+ */
+#if defined(HAVE_EXECV) || defined(HAVE_SPAWNV) || defined(HAVE_RTPSPAWN) || defined(HAVE_POSIX_SPAWN)
 static void
 free_string_array(EXECV_CHAR **array, Py_ssize_t count)
 {
@@ -6740,7 +6745,7 @@ fsconvert_strdup(PyObject *o, EXECV_CHAR **out)
 }
 #endif
 
-#if defined(HAVE_EXECV) || defined (HAVE_FEXECVE) || defined(HAVE_RTPSPAWN)
+#if defined(HAVE_EXECV) || defined (HAVE_FEXECVE) || defined(HAVE_RTPSPAWN) || defined(HAVE_POSIX_SPAWN)
 static EXECV_CHAR**
 parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
 {
