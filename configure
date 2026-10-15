@@ -7251,7 +7251,7 @@ then :
   Emscripten) :
      ;; #(
   WASI) :
-    as_fn_error $? "WASI dynamic linking is not implemented yet." "$LINENO" 5 ;; #(
+    : ;; #(
   *) :
     as_fn_error $? "--enable-wasm-dynamic-linking only applies to Emscripten and WASI" "$LINENO" 5
    ;;

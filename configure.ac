@@ -1297,7 +1297,8 @@ AC_ARG_ENABLE([wasm-dynamic-linking],
 [
   AS_CASE([$ac_sys_system],
     [Emscripten], [],
-    [WASI], [AC_MSG_ERROR([WASI dynamic linking is not implemented yet.])],
+    dnl browser-python: BrowserOS では C 拡張の .so をホストのローダー（@progate/browser-dyld）が読む
+    [WASI], [],
     [AC_MSG_ERROR([--enable-wasm-dynamic-linking only applies to Emscripten and WASI])]
   )
 ], [
