@@ -60,6 +60,35 @@ _PyEM_TrampolineCall_Reflection(PyCFunctionWithKeywords func,
     _PyEM_TrampolineCall((PyCFunctionWithKeywords)(get), (obj), (PyObject*)(closure), NULL)
 
 
+#elif defined(__wasi__)
+
+/*
+ * browser-python: WASI でも同じ不一致が起きる（`static PyObject *f(PyObject *self)` を METH_NOARGS で
+ * 登録すると、CPython が 2 引数で呼んだところで「function signature mismatch」になる）。
+ * 関数の本当の引数の数をホスト（@progate/browser-dyld）に聞き、その数で呼び直す
+ * （→ Python/wasi_trampoline.c）。
+ */
+PyObject*
+_PyWASI_TrampolineCall(PyCFunctionWithKeywords func,
+                       PyObject* self,
+                       PyObject* args,
+                       PyObject* kw);
+
+#define _Py_EmscriptenTrampoline_Init(runtime)
+
+#define _PyCFunction_TrampolineCall(meth, self, args) \
+    _PyWASI_TrampolineCall( \
+        (*(PyCFunctionWithKeywords)(void(*)(void))(meth)), (self), (args), NULL)
+
+#define _PyCFunctionWithKeywords_TrampolineCall(meth, self, args, kw) \
+    _PyWASI_TrampolineCall((meth), (self), (args), (kw))
+
+#define descr_set_trampoline_call(set, obj, value, closure) \
+    ((int)(intptr_t)_PyWASI_TrampolineCall((PyCFunctionWithKeywords)(set), (obj), (value), (PyObject*)(closure)))
+
+#define descr_get_trampoline_call(get, obj, closure) \
+    _PyWASI_TrampolineCall((PyCFunctionWithKeywords)(get), (obj), (PyObject*)(closure), NULL)
+
 #else // defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
 
 #define _Py_EmscriptenTrampoline_Init(runtime)
