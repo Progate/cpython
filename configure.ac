@@ -7762,15 +7762,19 @@ AS_CASE([$ac_sys_system],
         dnl WASI SDK 15.0 does not support file locking, mmap, and more.
         dnl Test modules that must be compiled as shared libraries are not supported
         dnl (see Modules/Setup.stdlib.in).
+        dnl
+        dnl browser-python: mmap・fcntl・termios は外している。
+        dnl mmap は、この行が書かれた当時（wasi-sdk 15）には代役が無かったが、wasi-sdk 25 には
+        dnl -lwasi-emulated-mman（実体は malloc）が在る。pip が vendor している cachecontrol が
+        dnl `import mmap` を要求するので、これが無いと pip が起動しない。
+        dnl fcntl（fcntl・flock・ioctl）と termios（tcgetattr・tcsetattr ほか）は、BrowserOS の libc が
+        dnl カーネルのホスト関数で本物を持つ（→ @progate/browser-os の libc/）。
         PY_STDLIB_MOD_SET_NA(
           [_ctypes_test],
           [_testexternalinspection],
           [_testimportmultiple],
           [_testmultiphase],
           [_testsinglephase],
-          [fcntl],
-          [mmap],
-          [termios],
           [xxlimited],
           [xxlimited_35],
         )
