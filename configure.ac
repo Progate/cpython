@@ -7736,13 +7736,16 @@ AS_CASE([$ac_sys_system],
     dnl dbm and gdbm aren't available, too.
     dnl Emscripten and WASI provide only stubs for pwd, grp APIs.
     dnl resource functions (get/setrusage) are stubs, too.
+    dnl
+    dnl browser-python: _multiprocessing と _posixshmem は外さない。BrowserOS の libc は名前つきセマフォ
+    dnl （sem_open をカーネルの表で持つ）と shm_open・プロセスをまたぐ MAP_SHARED を持つ（→ Progate/libc の
+    dnl semaphore.c・mman.c）。子は fork ではなく posix_spawn で起こす（multiprocessing の spawn）。
+    dnl 素の wasi-libc には sem_unlink も shm_open も無いので、下の検査がそのまま外す
     PY_STDLIB_MOD_SET_NA(
       [_curses],
       [_curses_panel],
       [_dbm],
       [_gdbm],
-      [_multiprocessing],
-      [_posixshmem],
       [_posixsubprocess],
       [_scproxy],
       [_tkinter],
