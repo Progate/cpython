@@ -32,9 +32,6 @@ import os
 import signal
 import sys
 
-# 0 / 1 / 2 を組み替える間だけ使う、子の中の仮の番号（最後に閉じる）
-_SCRATCH_FD = 100
-
 
 def _unsupported(what):
     return OSError(errno.ENOTSUP, f"{what} is not supported on BrowserOS")
@@ -45,21 +42,18 @@ def _file_actions(p2cread, c2pwrite, errwrite, pass_fds=()):
 
     ``dup2`` は並べた順に子の中で行われるので、繋ぐ元が 0 / 1 / 2 のどれかだと、先に上書きした fd を
     後で読んでしまう（``_posixsubprocess`` が ``dup`` で避けている #12607 と同じ問題）。そこで
-    いったん仮の番号へ写してから 0 / 1 / 2 へ移し、仮の番号は閉じる
+    いったん仮の番号へ写してから 0 / 1 / 2 へ移し、仮の番号は閉じる。仮の番号は、渡す fd と繋ぐ元の
+    どれよりも大きい番号にする（決まった番号にすると、その番号の fd を ``pass_fds`` で渡せなくなる）
     """
-    actions = []
-    for fd in pass_fds:
-        # 同じ番号への dup2 は、その fd を子に置くだけ（posix_spawn_file_actions_adddup2(3)）。仮の番号と重なると
-        # 0 / 1 / 2 を組み替えるあいだに上書きするので断る
-        if _SCRATCH_FD <= fd <= _SCRATCH_FD + 2:
-            raise _unsupported(f"passing fd {fd}")
-        actions.append((os.POSIX_SPAWN_DUP2, fd, fd))
+    # 同じ番号への dup2 は、その fd を子に置くだけ（posix_spawn_file_actions_adddup2(3)）
+    actions = [(os.POSIX_SPAWN_DUP2, fd, fd) for fd in pass_fds]
+    scratch_base = max(2, p2cread, c2pwrite, errwrite, *pass_fds) + 1
     moves = []
     for target, source in ((0, p2cread), (1, c2pwrite), (2, errwrite)):
         if source == -1 or source == target:
             continue
-        actions.append((os.POSIX_SPAWN_DUP2, source, _SCRATCH_FD + target))
-        moves.append((target, _SCRATCH_FD + target))
+        actions.append((os.POSIX_SPAWN_DUP2, source, scratch_base + target))
+        moves.append((target, scratch_base + target))
     for target, scratch in moves:
         actions.append((os.POSIX_SPAWN_DUP2, scratch, target))
         actions.append((os.POSIX_SPAWN_CLOSE, scratch))
