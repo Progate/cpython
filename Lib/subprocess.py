@@ -77,6 +77,12 @@ else:
 # some platforms do not support subprocesses
 _can_fork_exec = sys.platform not in {"emscripten", "wasi", "ios", "tvos", "watchos"}
 
+# browser-python: BrowserOS の libc は pipe / posix_spawn / waitpid / kill を本物で持つので、wasi でも
+# os.pipe / os.posix_spawn / os.waitpid / os.kill が在り、子を起こせる。fork / exec は無いままなので、
+# Popen の POSIX 版のうち子を起こす _execute_child だけを _browseros_subprocess が差し替える
+# （素の wasi-libc で組んだ wasi には posix_spawn が無く、上流と同じく子を起こせない）
+_browseros = sys.platform == "wasi" and hasattr(os, "posix_spawn")
+
 if _mswindows:
     import _winapi
     from _winapi import (CREATE_NEW_CONSOLE, CREATE_NEW_PROCESS_GROUP,
@@ -104,6 +110,7 @@ if _mswindows:
 else:
     if _can_fork_exec:
         from _posixsubprocess import fork_exec as _fork_exec
+    if _can_fork_exec or _browseros:
         # used in methods that are called by __del__
         class _del_safe:
             waitpid = os.waitpid
@@ -824,7 +831,7 @@ class Popen:
                  encoding=None, errors=None, text=None, umask=-1, pipesize=-1,
                  process_group=None):
         """Create new Popen instance."""
-        if not _can_fork_exec:
+        if not _can_fork_exec and not _browseros:
             raise OSError(
                 errno.ENOTSUP, f"{sys.platform} does not support processes."
             )
@@ -2256,3 +2263,8 @@ class Popen:
             """Kill the process with SIGKILL
             """
             self.send_signal(signal.SIGKILL)
+
+
+if _browseros:
+    import _browseros_subprocess
+    _browseros_subprocess.install(Popen)
