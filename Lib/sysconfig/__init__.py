@@ -634,11 +634,11 @@ def get_platform():
     # pip が区別できず、入れた後の import が undefined symbol で落ちる。manylinux の
     # manylinux_2_28 と同じく、ABI を変えたら版を上げる（→ @progate/browser-python の scripts/build-wheels.py の TAG）。
     # スレッド版（SOABI が -threads で終わる）の拡張は共有メモリでしかリンクできず、1 本の版と混ぜられないので
-    # 別の版にする
+    # 別の版にする。abi3・abi4 は libc のヘッダーの値（errno・O_*・時計の番号など）が Linux になった版
     if sys.platform == "wasi":
         if (get_config_var("SOABI") or "").endswith("-threads"):
-            return "wasi-progate_abi2-wasm32"
-        return "wasi-progate_abi1-wasm32"
+            return "wasi-progate_abi4-wasm32"
+        return "wasi-progate_abi3-wasm32"
 
     # Try to distinguish various flavours of Unix
     osname, host, release, version, machine = os.uname()
