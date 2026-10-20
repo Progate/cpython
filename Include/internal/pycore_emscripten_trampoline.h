@@ -60,13 +60,15 @@ _PyEM_TrampolineCall_Reflection(PyCFunctionWithKeywords func,
     _PyEM_TrampolineCall((PyCFunctionWithKeywords)(get), (obj), (PyObject*)(closure), NULL)
 
 
-#elif defined(__wasi__)
+#elif defined(__wasm__)
 
 /*
  * browser-python: WASI でも同じ不一致が起きる（`static PyObject *f(PyObject *self)` を METH_NOARGS で
  * 登録すると、CPython が 2 引数で呼んだところで「function signature mismatch」になる）。
  * 関数の本当の引数の数をホスト（@progate/browser-dyld）に聞き、その数で呼び直す
  * （→ Python/wasi_trampoline.c）。
+ * call_indirect の型照合は wasm の仕様なので、対象は __wasi__ ではなく wasm の的（wasm32-unknown-linux-musl
+ * など OS が違う的を含む）の `__wasm__` で開く
  */
 PyObject*
 _PyWASI_TrampolineCall(PyCFunctionWithKeywords func,
