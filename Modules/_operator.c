@@ -1688,9 +1688,10 @@ methodcaller_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *)mc;
 }
 
-static void
-methodcaller_clear(methodcallerobject *mc)
+static int
+methodcaller_clear(PyObject *op)
 {
+    methodcallerobject *mc = (methodcallerobject *)op;
     Py_CLEAR(mc->name);
     Py_CLEAR(mc->xargs);
     Py_CLEAR(mc->kwds);
@@ -1699,6 +1700,7 @@ methodcaller_clear(methodcallerobject *mc)
         mc->vectorcall_args = 0;
         Py_CLEAR(mc->vectorcall_kwnames);
     }
+    return 0;
 }
 
 static void
@@ -1706,7 +1708,7 @@ methodcaller_dealloc(methodcallerobject *mc)
 {
     PyTypeObject *tp = Py_TYPE(mc);
     PyObject_GC_UnTrack(mc);
-    methodcaller_clear(mc);
+    (void)methodcaller_clear((PyObject *)mc);
     tp->tp_free(mc);
     Py_DECREF(tp);
 }
