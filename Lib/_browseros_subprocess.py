@@ -80,8 +80,6 @@ def _execute_child(self, args, executable, preexec_fn, close_fds,
         raise _unsupported("preexec_fn")
     if gid is not None or gids is not None or uid is not None or umask >= 0:
         raise _unsupported("changing users, groups or umask")
-    if start_new_session or process_group >= 0:
-        raise _unsupported("start_new_session and process_group")
 
     # ここから下の引数の整え方は CPython の POSIX 版と同じ
     if isinstance(args, (str, bytes)):
@@ -115,15 +113,22 @@ def _execute_child(self, args, executable, preexec_fn, close_fds,
         executable_list = tuple(os.path.join(os.fsencode(dir), executable)
                                 for dir in os.get_exec_path(env))
 
+    # 新しいセッション・プロセスグループは posix_spawn の属性で子に作らせる（_posixsubprocess が子で
+    # setsid() / setpgid() を呼ぶのと同じ順で、musl の posix_spawn も setsid のあとに setpgid する）
+    session = {}
+    if start_new_session:
+        session['setsid'] = True
+    if process_group >= 0:
+        session['setpgroup'] = process_group
     self.pid = _spawn(executable_list, args, environ, _file_actions(p2cread, c2pwrite, errwrite, pass_fds),
-                      restore_signals, cwd, orig_executable)
+                      restore_signals, cwd, orig_executable, session)
     self._child_created = True
     self._close_pipe_fds(p2cread, p2cwrite,
                          c2pread, c2pwrite,
                          errread, errwrite)
 
 
-def _spawn(executable_list, args, environ, file_actions, restore_signals, cwd, display):
+def _spawn(executable_list, args, environ, file_actions, restore_signals, cwd, display, session=None):
     """``executable_list`` を順に試して子を起こし、pid を返す。
 
     @param executable_list [tuple] 試す実行ファイルのパス（bytes）
@@ -133,9 +138,10 @@ def _spawn(executable_list, args, environ, file_actions, restore_signals, cwd, d
     @param restore_signals [bool] 親が無視にしたシグナルを子で既定に戻すか
     @param cwd [str | bytes | PathLike | None] 子の作業ディレクトリ
     @param display 起こせなかったときに例外へ載せる名前
+    @param session [dict | None] ``os.posix_spawn`` の ``setsid`` / ``setpgroup``
     @return [int] 子の pid
     """
-    kwargs = {'file_actions': file_actions}
+    kwargs = {'file_actions': file_actions, **(session or {})}
     if restore_signals:
         kwargs['setsigdef'] = _signals_to_restore()
 

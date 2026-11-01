@@ -30,6 +30,18 @@ PLATFORM_TRIPLET=arm-linux-androideabi
 /*
  * BEGIN of Linux block
  */
+# if defined(__wasm32__)
+/* BrowserOS（wasm32-unknown-linux-musl）。configure は wasm32-wasip1 を名乗る
+ * （sys.platform・wheel の拡張の名前を 'wasi' に揃えるため）ので、triplet もその名に
+ * 揃える。下の libc 判定は clang 組み込みの stdarg.h では musl の印（__DEFINED_*）が
+ * 取れず通らないので、arch の判定の前にここで値を決める
+ */
+#  if defined(_REENTRANT)
+PLATFORM_TRIPLET=wasm32-wasi-threads
+#  else
+PLATFORM_TRIPLET=wasm32-wasi
+#  endif
+# else
 // Detect libc (based on config.guess)
 # include <features.h>
 # if defined(__UCLIBC__)
@@ -225,6 +237,7 @@ PLATFORM_TRIPLET=riscv64-linux-LIBC
 # else
 #   error unknown platform triplet
 # endif
+# endif /* !defined(__wasm32__) */
 /*
  * END of Linux block
  */
