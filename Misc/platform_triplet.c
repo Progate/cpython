@@ -31,16 +31,12 @@ PLATFORM_TRIPLET=arm-linux-androideabi
  * BEGIN of Linux block
  */
 # if defined(__wasm32__)
-/* BrowserOS（wasm32-unknown-linux-musl）。configure は wasm32-wasip1 を名乗る
- * （sys.platform・wheel の拡張の名前を 'wasi' に揃えるため）ので、triplet もその名に
- * 揃える。下の libc 判定は clang 組み込みの stdarg.h では musl の印（__DEFINED_*）が
- * 取れず通らないので、arch の判定の前にここで値を決める
+/* BrowserOS（wasm32-unknown-linux-musl）。triplet は Debian の multiarch の名前と同じく libc を名乗る
+ * （拡張は `.cpython-313-wasm32-linux-musl.so`、ライブラリの置き場は `/usr/lib/wasm32-linux-musl`）。
+ * 下の libc 判定は clang 組み込みの stdarg.h では musl の印（__DEFINED_*）が取れず通らないので、
+ * arch の判定の前にここで値を決める。世界はいつも共有メモリのスレッド版なので、スレッドで名前を分けない
  */
-#  if defined(_REENTRANT)
-PLATFORM_TRIPLET=wasm32-wasi-threads
-#  else
-PLATFORM_TRIPLET=wasm32-wasi
-#  endif
+PLATFORM_TRIPLET=wasm32-linux-musl
 # else
 // Detect libc (based on config.guess)
 # include <features.h>

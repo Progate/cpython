@@ -77,11 +77,11 @@ else:
 # some platforms do not support subprocesses
 _can_fork_exec = sys.platform not in {"emscripten", "wasi", "ios", "tvos", "watchos"}
 
-# browser-python: BrowserOS の libc は pipe / posix_spawn / waitpid / kill を本物で持つので、wasi でも
-# os.pipe / os.posix_spawn / os.waitpid / os.kill が在り、子を起こせる。fork / exec は無いままなので、
-# Popen の POSIX 版のうち子を起こす _execute_child だけを _browseros_subprocess が差し替える
-# （素の wasi-libc で組んだ wasi には posix_spawn が無く、上流と同じく子を起こせない）
-_browseros = sys.platform == "wasi" and hasattr(os, "posix_spawn")
+# browser-python: fork の無い OS（BrowserOS の Linux）では、子を posix_spawn（vfork 形の clone）で起こす。
+# libc は pipe / posix_spawn / waitpid / kill を本物で持つので Popen の POSIX 版がそのまま使え、子を起こす
+# _execute_child だけを _browseros_subprocess が差し替える（素の wasi-libc で組んだ wasi には posix_spawn が無く、
+# 上流と同じく子を起こせない）
+_browseros = not hasattr(os, "fork") and hasattr(os, "posix_spawn")
 
 if _mswindows:
     import _winapi
