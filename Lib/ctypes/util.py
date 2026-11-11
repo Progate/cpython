@@ -335,9 +335,32 @@ elif os.name == "posix":
                 pass  # result will be None
             return result
 
+        def _findLib_musl(name):
+            # browser-python: musl の Linux には glibc の ldconfig の表（-p）が無く、BrowserOS の共有ライブラリは
+            # ELF でもないので、上の道ではどれも見つからない。ローダーと同じ置き場（LD_LIBRARY_PATH と multiarch の
+            # 置き場。→ @progate/browser-dyld の search.ts）を直に探し、名前を返す（Alpine の CPython が当てている
+            # musl の find_library の直しと同じ考え）
+            multiarch = getattr(sys.implementation, '_multiarch', '')
+            if not multiarch.endswith('-musl'):
+                return None
+            directories = [d for d in os.environ.get('LD_LIBRARY_PATH', '').split(':') if d]
+            directories += [f'/lib/{multiarch}', f'/usr/lib/{multiarch}', '/lib', '/usr/local/lib', '/usr/lib']
+            prefix = f'lib{name}.so'
+            for directory in directories:
+                try:
+                    entries = os.listdir(directory)
+                except OSError:
+                    continue
+                if prefix in entries:
+                    return prefix
+                versioned = sorted(entry for entry in entries if entry.startswith(prefix + '.'))
+                if versioned:
+                    return versioned[0]
+            return None
+
         def find_library(name):
             # See issue #9998
-            return _findSoname_ldconfig(name) or \
+            return _findLib_musl(name) or _findSoname_ldconfig(name) or \
                    _get_soname(_findLib_gcc(name)) or _get_soname(_findLib_ld(name))
 
 ################################################################
