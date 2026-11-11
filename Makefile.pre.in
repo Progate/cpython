@@ -130,6 +130,8 @@ CFLAGS_ALIASING=@CFLAGS_ALIASING@
 
 # Machine-dependent subdirectories
 MACHDEP=	@MACHDEP@
+# browser-python: BrowserOS の世界の ABI の版（→ configure.ac の BROWSEROS_ABI）
+BROWSEROS_ABI=	@BROWSEROS_ABI@
 
 # Multiarch directory (may be empty)
 MULTIARCH=	@MULTIARCH@

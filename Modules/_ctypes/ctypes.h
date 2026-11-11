@@ -23,10 +23,10 @@
  */
 #ifndef CTYPES_MAX_ARGCOUNT
   /*
-   * browser-python: WASI でも Emscripten と同じ数にする。関数ポインタの呼び出しとクロージャの関数は wasm の関数型で
+   * browser-python: wasm の的（WASI・BrowserOS の Linux）でも Emscripten と同じ数にする。関数ポインタの呼び出しとクロージャの関数は wasm の関数型で
    * 作るので、WebAssembly の JS API の上限（引数 1000 個）を超えられない（→ Progate/libffi の src/wasm/ffi.c の MAX_ARGS）
    */
-  #if defined(__EMSCRIPTEN__) || defined(__wasi__)
+  #if defined(__EMSCRIPTEN__) || defined(__wasm__)
     #define CTYPES_MAX_ARGCOUNT 1000
   #else
     #define CTYPES_MAX_ARGCOUNT 1024

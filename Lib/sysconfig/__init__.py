@@ -629,16 +629,17 @@ def get_platform():
     if "_PYTHON_HOST_PLATFORM" in os.environ:
         return os.environ["_PYTHON_HOST_PLATFORM"]
 
-    # browser-python: wheel の platform タグに「どの python.wasm の ABI 向けか」を載せる。
-    # wasi-libc の uname は release に常に 0.0.0 を返すので、そのままだと ABI の違う wheel を
-    # pip が区別できず、入れた後の import が undefined symbol で落ちる。manylinux の
-    # manylinux_2_28 と同じく、ABI を変えたら版を上げる（→ @progate/browser-python の scripts/build-wheels.py の TAG）。
-    # スレッド版（SOABI が -threads で終わる）の拡張は共有メモリでしかリンクできず、1 本の版と混ぜられないので
-    # 別の版にする。abi3・abi4 は libc のヘッダーの値（errno・O_*・時計の番号など）が Linux になった版
-    if sys.platform == "wasi":
-        if (get_config_var("SOABI") or "").endswith("-threads"):
-            return "wasi-progate_abi4-wasm32"
-        return "wasi-progate_abi3-wasm32"
+    # browser-python: BrowserOS（wasm32 の Linux）の wheel の platform タグは `browseros_<ABI の版>_wasm32`。
+    # 拡張は世界の libc.so・libc++.so とローダーの取り決め（ABI の版）に結ばれていて、ネイティブの Linux の
+    # wheel（linux_*・manylinux_*）とは混ぜられない。Android が `android_<API level>_<arch>` を返すのと同じく、
+    # OS と ABI の版を名乗る（packaging は `linux` で始まらない値をそのままタグにする）。版は configure の
+    # BROWSEROS_ABI（@progate/browser-system-libs の WORLD_ABI）で、ABI を変えたら上がる
+    # 確かめるのは wasm32 の Linux で走っているときだけにする（ビルドのホストの python は、sysconfig の値を
+    # 書き出す前にここを通る）
+    if sys.platform == "linux" and os.uname().machine == "wasm32":
+        browseros_abi = get_config_var("BROWSEROS_ABI")
+        if browseros_abi:
+            return f"browseros-{browseros_abi}-wasm32"
 
     # Try to distinguish various flavours of Unix
     osname, host, release, version, machine = os.uname()

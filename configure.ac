@@ -5165,14 +5165,26 @@ AS_CASE([$ac_sys_system],
     AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o Python/emscripten_trampoline.o'])
     AS_VAR_APPEND([PLATFORM_HEADERS], [' $(srcdir)/Include/internal/pycore_emscripten_signal.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h'])
   ],
-  dnl browser-python: C の関数ポインタを本当の引数の数で呼ぶ call trampoline の WASI 版
+  dnl browser-python: C の関数ポインタを本当の引数の数で呼ぶ call trampoline の wasm 版。
+  dnl call_indirect の型照合は wasm の仕様なので、OS（WASI・BrowserOS の Linux）によらず wasm32 の的で組む
   [WASI], [
     AS_VAR_APPEND([PLATFORM_OBJS], [' Python/wasi_trampoline.o'])
     AS_VAR_APPEND([PLATFORM_HEADERS], [' $(srcdir)/Include/internal/pycore_emscripten_trampoline.h'])
   ],
+  [Linux], [
+    AS_CASE([$host_cpu], [wasm32], [
+      AS_VAR_APPEND([PLATFORM_OBJS], [' Python/wasi_trampoline.o'])
+      AS_VAR_APPEND([PLATFORM_HEADERS], [' $(srcdir)/Include/internal/pycore_emscripten_trampoline.h'])
+    ])
+  ],
 )
 AC_SUBST([PLATFORM_HEADERS])
 AC_SUBST([PLATFORM_OBJS])
+
+dnl browser-python: BrowserOS の世界の ABI の版（@progate/browser-system-libs の WORLD_ABI）。wheel の platform タグ
+dnl `browseros_<版>_wasm32` に載せる（→ Lib/sysconfig/__init__.py の get_platform。Android の API level と同じ役）
+AC_ARG_VAR([BROWSEROS_ABI], [BrowserOS world ABI version (wasm32 Linux only)])
+AC_SUBST([BROWSEROS_ABI])
 
 # -I${DLINCLDIR} is added to the compile rule for importdl.o
 AC_SUBST([DLINCLDIR])
@@ -7872,7 +7884,9 @@ PY_STDLIB_MOD_SIMPLE([_json])
 PY_STDLIB_MOD_SIMPLE([_lsprof])
 PY_STDLIB_MOD_SIMPLE([_opcode])
 PY_STDLIB_MOD_SIMPLE([_pickle])
-PY_STDLIB_MOD_SIMPLE([_posixsubprocess])
+dnl browser-python: C の実装は fork（vfork）で子を起こす。fork の無い OS（BrowserOS の Linux。子は posix_spawn の
+dnl vfork 形の clone で起きる）では組まず、Lib/_posixsubprocess.py（posix_spawn で起こす）を使う
+PY_STDLIB_MOD([_posixsubprocess], [], [test "$ac_cv_func_fork" = yes])
 PY_STDLIB_MOD_SIMPLE([_queue])
 PY_STDLIB_MOD_SIMPLE([_random])
 PY_STDLIB_MOD_SIMPLE([select])

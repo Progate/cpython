@@ -863,6 +863,7 @@ TRUE
 MACHDEP_OBJS
 DYNLOADFILE
 DLINCLDIR
+BROWSEROS_ABI
 PLATFORM_OBJS
 PLATFORM_HEADERS
 DTRACE_OBJS
@@ -1164,6 +1165,7 @@ X11_CFLAGS
 X11_LIBS
 GDBM_CFLAGS
 GDBM_LIBS
+BROWSEROS_ABI
 ZLIB_CFLAGS
 ZLIB_LIBS
 BZIP2_CFLAGS
@@ -1999,6 +2001,8 @@ Some influential environment variables:
   X11_LIBS    linker flags for X11, overriding pkg-config
   GDBM_CFLAGS C compiler flags for gdbm
   GDBM_LIBS   additional linker flags for gdbm
+  BROWSEROS_ABI
+              BrowserOS world ABI version (wasm32 Linux only)
   ZLIB_CFLAGS C compiler flags for ZLIB, overriding pkg-config
   ZLIB_LIBS   linker flags for ZLIB, overriding pkg-config
   BZIP2_CFLAGS
@@ -7250,8 +7254,8 @@ then :
   case $ac_sys_system in #(
   Emscripten) :
      ;; #(
-  WASI) :
-    : ;; #(
+      WASI) :
+     ;; #(
   *) :
     as_fn_error $? "--enable-wasm-dynamic-linking only applies to Emscripten and WASI" "$LINENO" 5
    ;;
@@ -18122,14 +18126,29 @@ case $ac_sys_system in #(
     as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o Python/emscripten_trampoline.o'
     as_fn_append PLATFORM_HEADERS ' $(srcdir)/Include/internal/pycore_emscripten_signal.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h'
    ;; #(
-  WASI) :
+      WASI) :
 
     as_fn_append PLATFORM_OBJS ' Python/wasi_trampoline.o'
     as_fn_append PLATFORM_HEADERS ' $(srcdir)/Include/internal/pycore_emscripten_trampoline.h'
    ;; #(
+  Linux) :
+
+    case $host_cpu in #(
+  wasm32) :
+
+      as_fn_append PLATFORM_OBJS ' Python/wasi_trampoline.o'
+      as_fn_append PLATFORM_HEADERS ' $(srcdir)/Include/internal/pycore_emscripten_trampoline.h'
+     ;; #(
   *) :
      ;;
 esac
+   ;; #(
+  *) :
+     ;;
+esac
+
+
+
 
 
 
@@ -29806,9 +29825,31 @@ then :
 fi
 
 
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _posixsubprocess" >&5
+printf %s "checking for stdlib extension module _posixsubprocess... " >&6; }
         if test "$py_cv_module__posixsubprocess" != "n/a"
 then :
+
+    if true
+then :
+  if test "$ac_cv_func_fork" = yes
+then :
   py_cv_module__posixsubprocess=yes
+else $as_nop
+  py_cv_module__posixsubprocess=missing
+fi
+else $as_nop
+  py_cv_module__posixsubprocess=disabled
+fi
+
+fi
+  as_fn_append MODULE_BLOCK "MODULE__POSIXSUBPROCESS_STATE=$py_cv_module__posixsubprocess$as_nl"
+  if test "x$py_cv_module__posixsubprocess" = xyes
+then :
+
+
+
+
 fi
    if test "$py_cv_module__posixsubprocess" = yes; then
   MODULE__POSIXSUBPROCESS_TRUE=
@@ -29818,14 +29859,8 @@ else
   MODULE__POSIXSUBPROCESS_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE__POSIXSUBPROCESS_STATE=$py_cv_module__posixsubprocess$as_nl"
-  if test "x$py_cv_module__posixsubprocess" = xyes
-then :
-
-
-
-
-fi
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__posixsubprocess" >&5
+printf "%s\n" "$py_cv_module__posixsubprocess" >&6; }
 
 
         if test "$py_cv_module__queue" != "n/a"

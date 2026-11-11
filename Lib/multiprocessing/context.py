@@ -268,7 +268,7 @@ class DefaultContext(BaseContext):
         if sys.platform == 'win32':
             return ['spawn']
         elif not hasattr(os, 'fork'):
-            # browser-python: fork の無い OS（BrowserOS の WASI）は、子を posix_spawn で起こす spawn だけを持つ
+            # browser-python: fork の無い OS（BrowserOS の Linux）は、子を posix_spawn で起こす spawn だけを持つ
             # （forkserver もサーバーが fork する）
             return ['spawn']
         else:
@@ -333,7 +333,7 @@ if sys.platform != 'win32':
     if sys.platform == 'darwin' or not hasattr(os, 'fork'):
         # bpo-33725: running arbitrary code after fork() is no longer reliable
         # on macOS since macOS 10.14 (Mojave). Use spawn by default instead.
-        # browser-python: fork の無い OS（BrowserOS の WASI）も spawn で起こす
+        # browser-python: fork の無い OS（BrowserOS の Linux）も spawn で起こす
         _default_context = DefaultContext(_concrete_contexts['spawn'])
     else:
         _default_context = DefaultContext(_concrete_contexts['fork'])

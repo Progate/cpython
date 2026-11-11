@@ -1,6 +1,6 @@
-"""BrowserOS の上の WASI で ``subprocess.Popen`` の子を起こす（``subprocess`` の末尾が ``install`` を呼ぶ）。
+"""fork の無い OS（BrowserOS の Linux）で ``subprocess.Popen`` の子を起こす（``subprocess`` の末尾が ``install`` を呼ぶ）。
 
-WASI preview1 には fork も exec も無いので、CPython の ``_posixsubprocess.fork_exec`` は組めない。BrowserOS の
+BrowserOS には fork が無い（子は posix_spawn の vfork 形の clone で起きる）ので、CPython の ``_posixsubprocess.fork_exec`` は組めない。BrowserOS の
 libc は ``pipe`` / ``posix_spawn`` / ``waitpid`` / ``kill`` を本物で持つので（→ @progate/browser-libc）、
 ``os.pipe`` / ``os.posix_spawn`` / ``os.waitpid`` / ``os.kill`` は posixmodule がそのまま生やす。``Popen`` の
 POSIX 版はほぼそのまま動き、**差し替えるのは子を起こす ``_execute_child`` だけ**である。パイプを作る
